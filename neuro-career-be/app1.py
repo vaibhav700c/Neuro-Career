@@ -15,7 +15,7 @@ import google.generativeai as genai
 from elevenlabs import ElevenLabs
 
 # ---------------- CONFIG ----------------
-ENV_PATH = "/Users/webov/Desktop/Projects/GenAI/genai_model              /.env"   # change if needed
+ENV_PATH = "/Users/webov/Desktop/Projects/GenAI/neuro-career-be/.env"   # change if needed
 SAMPLE_RATE = 16000
 BLOCKSIZE = 1024                        # input block size for sounddevice callback
 SILENCE_THRESHOLD = 0.01                # RMS threshold to consider "speech"

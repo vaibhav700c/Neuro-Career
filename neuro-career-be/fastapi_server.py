@@ -14,7 +14,7 @@ from elevenlabs import ElevenLabs
 import io
 
 # Load environment variables
-ENV_PATH = "/Users/webov/Desktop/Projects/GenAI/genai_model              /.env"
+ENV_PATH = "/Users/webov/Desktop/Projects/GenAI/neuro-career-be             /.env"
 load_dotenv(dotenv_path=ENV_PATH)
 
 ASSEMBLYAI_KEY = os.getenv("ASSEMBLYAI_API_KEY")
