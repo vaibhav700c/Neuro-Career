@@ -1,0 +1,496 @@
+"use client"
+import { NeonCard } from "@/components/neon-card"
+import { SectionHeader } from "@/components/section-header"
+import { Button } from "@/components/ui/button"
+import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Play, BookOpen, Trophy, Clock, ExternalLink, Code, Database, Globe, Users, Target, Laptop, Brain, Palette, BarChart3, Briefcase } from "lucide-react"
+
+const careerLearningPaths = {
+  "Software Engineer": {
+    icon: Code,
+    color: "text-blue-400",
+    paths: [
+      {
+        id: "fundamentals",
+        title: "Programming Fundamentals",
+        description: "Master the core concepts of software development",
+        progress: 25,
+        totalLessons: 45,
+        completedLessons: 12,
+        difficulty: "Beginner",
+        estimatedTime: "8-12 weeks",
+        technologies: ["Python", "JavaScript", "Git", "HTML/CSS"]
+      },
+      {
+        id: "fullstack",
+        title: "Full-Stack Development",
+        description: "Build complete web applications from frontend to backend",
+        progress: 10,
+        totalLessons: 68,
+        completedLessons: 7,
+        difficulty: "Intermediate",
+        estimatedTime: "16-20 weeks",
+        technologies: ["React", "Node.js", "Databases", "APIs"]
+      },
+      {
+        id: "algorithms",
+        title: "Data Structures & Algorithms",
+        description: "Optimize problem-solving skills for technical interviews",
+        progress: 40,
+        totalLessons: 32,
+        completedLessons: 13,
+        difficulty: "Advanced",
+        estimatedTime: "12-16 weeks",
+        technologies: ["Arrays", "Trees", "Graphs", "Dynamic Programming"]
+      }
+    ]
+  },
+  "Data Scientist": {
+    icon: BarChart3,
+    color: "text-green-400",
+    paths: [
+      {
+        id: "data-fundamentals",
+        title: "Data Science Fundamentals",
+        description: "Learn statistics, data analysis, and visualization",
+        progress: 30,
+        totalLessons: 40,
+        completedLessons: 12,
+        difficulty: "Beginner",
+        estimatedTime: "10-14 weeks",
+        technologies: ["Python", "Pandas", "NumPy", "Matplotlib"]
+      },
+      {
+        id: "machine-learning",
+        title: "Machine Learning Mastery",
+        description: "Build predictive models and AI solutions",
+        progress: 15,
+        totalLessons: 55,
+        completedLessons: 8,
+        difficulty: "Intermediate",
+        estimatedTime: "18-24 weeks",
+        technologies: ["Scikit-learn", "TensorFlow", "PyTorch", "Keras"]
+      },
+      {
+        id: "advanced-analytics",
+        title: "Advanced Analytics",
+        description: "Deep learning, NLP, and big data processing",
+        progress: 5,
+        totalLessons: 35,
+        completedLessons: 2,
+        difficulty: "Advanced",
+        estimatedTime: "14-20 weeks",
+        technologies: ["Spark", "Hadoop", "NLP", "Computer Vision"]
+      }
+    ]
+  },
+  "UX Designer": {
+    icon: Palette,
+    color: "text-purple-400",
+    paths: [
+      {
+        id: "design-thinking",
+        title: "Design Thinking & Research",
+        description: "User research, personas, and design methodology",
+        progress: 20,
+        totalLessons: 30,
+        completedLessons: 6,
+        difficulty: "Beginner",
+        estimatedTime: "6-8 weeks",
+        technologies: ["Figma", "User Research", "Personas", "Journey Maps"]
+      },
+      {
+        id: "ui-design",
+        title: "UI Design & Prototyping",
+        description: "Visual design, prototyping, and design systems",
+        progress: 35,
+        totalLessons: 42,
+        completedLessons: 15,
+        difficulty: "Intermediate",
+        estimatedTime: "12-16 weeks",
+        technologies: ["Figma", "Adobe XD", "Sketch", "InVision"]
+      },
+      {
+        id: "ux-strategy",
+        title: "UX Strategy & Leadership",
+        description: "Design leadership, strategy, and business impact",
+        progress: 10,
+        totalLessons: 25,
+        completedLessons: 3,
+        difficulty: "Advanced",
+        estimatedTime: "8-12 weeks",
+        technologies: ["Design Systems", "A/B Testing", "Analytics", "Leadership"]
+      }
+    ]
+  }
+}
+
+const universalCourses = [
+  {
+    title: "Critical Thinking for Problem Solving",
+    provider: "Universal Skills Academy",
+    rating: 4.9,
+    students: "200K",
+    duration: "20 hours",
+    level: "All Levels",
+    price: "Free",
+    topics: ["Logic", "Analysis", "Decision Making", "Problem Decomposition"],
+    applicableTo: ["Software Engineer", "Data Scientist", "UX Designer"]
+  },
+  {
+    title: "Communication Skills for Tech Professionals",
+    provider: "Career Development Pro",
+    rating: 4.7,
+    students: "150K",
+    duration: "15 hours",
+    level: "Beginner",
+    price: "$49",
+    topics: ["Technical Writing", "Presentations", "Team Collaboration", "Client Communication"],
+    applicableTo: ["Software Engineer", "Data Scientist", "UX Designer"]
+  },
+  {
+    title: "Project Management Fundamentals",
+    provider: "Business Skills Institute",
+    rating: 4.8,
+    students: "180K",
+    duration: "25 hours",
+    level: "Intermediate",
+    price: "$79",
+    topics: ["Agile", "Scrum", "Planning", "Risk Management"],
+    applicableTo: ["Software Engineer", "Data Scientist", "UX Designer"]
+  }
+]
+
+const skillChallenges = [
+  {
+    title: "Cross-Functional Innovation Challenge",
+    description: "Collaborate across disciplines to solve real-world problems",
+    difficulty: "Intermediate",
+    participants: "25K",
+    reward: "Industry Recognition",
+    timeLeft: "18 days",
+    progress: 45,
+    skills: ["Collaboration", "Innovation", "Problem Solving"]
+  },
+  {
+    title: "Professional Portfolio Sprint",
+    description: "Build a compelling portfolio showcasing your unique skills",
+    difficulty: "Beginner",
+    participants: "35K",
+    reward: "Portfolio Review",
+    timeLeft: "2 weeks",
+    progress: 60,
+    skills: ["Personal Branding", "Documentation", "Presentation"]
+  },
+  {
+    title: "Leadership & Communication Workshop",
+    description: "Develop soft skills essential for career advancement",
+    difficulty: "All Levels",
+    participants: "40K",
+    reward: "Leadership Certificate",
+    timeLeft: "1 month",
+    progress: 20,
+    skills: ["Leadership", "Communication", "Mentoring"]
+  }
+]
+
+const professionalCertifications = {
+  "Software Engineer": [
+    { name: "AWS Certified Developer", provider: "Amazon", difficulty: "Intermediate", timeToComplete: "3-6 months" },
+    { name: "Google Cloud Professional", provider: "Google", difficulty: "Advanced", timeToComplete: "4-8 months" },
+    { name: "Microsoft Azure Fundamentals", provider: "Microsoft", difficulty: "Beginner", timeToComplete: "2-4 months" },
+    { name: "Meta Frontend Developer", provider: "Meta", difficulty: "Intermediate", timeToComplete: "4-7 months" }
+  ],
+  "Data Scientist": [
+    { name: "Google Data Analytics Certificate", provider: "Google", difficulty: "Beginner", timeToComplete: "3-6 months" },
+    { name: "IBM Data Science Professional", provider: "IBM", difficulty: "Intermediate", timeToComplete: "6-10 months" },
+    { name: "Microsoft Azure Data Scientist", provider: "Microsoft", difficulty: "Advanced", timeToComplete: "4-8 months" },
+    { name: "Coursera Machine Learning", provider: "Stanford", difficulty: "Advanced", timeToComplete: "3-5 months" }
+  ],
+  "UX Designer": [
+    { name: "Google UX Design Certificate", provider: "Google", difficulty: "Beginner", timeToComplete: "3-6 months" },
+    { name: "Adobe Certified Expert", provider: "Adobe", difficulty: "Intermediate", timeToComplete: "2-4 months" },
+    { name: "Nielsen Norman Group UX", provider: "NN/g", difficulty: "Advanced", timeToComplete: "6-12 months" },
+    { name: "Human-Computer Interaction", provider: "UC San Diego", difficulty: "Advanced", timeToComplete: "4-8 months" }
+  ]
+}
+
+// Get the top recommended career from assessment results
+const topCareer = "Software Engineer" // This would be dynamic based on assessment results
+const secondaryCareer = "Data Scientist"
+
+export default function LearningPage() {
+  const currentCareerPaths = careerLearningPaths[topCareer]
+  const secondaryCareerPaths = careerLearningPaths[secondaryCareer]
+  const CurrentIcon = currentCareerPaths.icon
+  const SecondaryIcon = secondaryCareerPaths.icon
+
+  return (
+    <main className="dark mx-auto max-w-6xl px-4 py-10 md:py-16">
+      <SectionHeader 
+        title="Personalized Learning Hub" 
+        subtitle="Curated learning resources based on your assessment results and career recommendations"
+      />
+
+      {/* Career-Specific Learning Paths */}
+      <Tabs defaultValue="primary" className="mb-8">
+        <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsTrigger value="primary" className="flex items-center gap-2">
+            <CurrentIcon className={`h-4 w-4 ${currentCareerPaths.color}`} />
+            {topCareer} (Top Match)
+          </TabsTrigger>
+          <TabsTrigger value="secondary" className="flex items-center gap-2">
+            <SecondaryIcon className={`h-4 w-4 ${secondaryCareerPaths.color}`} />
+            {secondaryCareer} (Strong Match)
+          </TabsTrigger>
+          <TabsTrigger value="universal" className="flex items-center gap-2">
+            <Brain className="h-4 w-4 text-orange-400" />
+            Universal Skills
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="primary">
+          <div className="mb-6">
+            <SectionHeader title={`${topCareer} Learning Paths`} subtitle="Recommended based on your highest compatibility score" />
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {currentCareerPaths.paths.map((path) => (
+              <NeonCard key={path.id} className="p-5">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-lg mb-2">{path.title}</h3>
+                  <p className="text-sm text-white/70 mb-3">{path.description}</p>
+                  
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400">
+                      {path.difficulty}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs bg-green-500/20 text-green-400">
+                      {path.estimatedTime}
+                    </Badge>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-white/60 mb-1">
+                      <span>Progress: {path.completedLessons}/{path.totalLessons} lessons</span>
+                      <span>{path.progress}%</span>
+                    </div>
+                    <Progress value={path.progress} />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="text-xs text-white/70 mb-1">Technologies:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {path.technologies.map((tech) => (
+                        <span key={tech} className="text-xs bg-white/10 px-2 py-1 rounded">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <Button className="w-full bg-[#3B82F6] hover:bg-[#3B82F6]/90">
+                  <Play className="mr-2 h-4 w-4" />
+                  Continue Learning
+                </Button>
+              </NeonCard>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="secondary">
+          <div className="mb-6">
+            <SectionHeader title={`${secondaryCareer} Learning Paths`} subtitle="Alternative career path based on your assessment" />
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {secondaryCareerPaths.paths.map((path) => (
+              <NeonCard key={path.id} className="p-5">
+                <div className="mb-4">
+                  <h3 className="font-semibold text-lg mb-2">{path.title}</h3>
+                  <p className="text-sm text-white/70 mb-3">{path.description}</p>
+                  
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="outline" className="text-xs bg-green-500/20 text-green-400">
+                      {path.difficulty}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400">
+                      {path.estimatedTime}
+                    </Badge>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <div className="flex justify-between text-xs text-white/60 mb-1">
+                      <span>Progress: {path.completedLessons}/{path.totalLessons} lessons</span>
+                      <span>{path.progress}%</span>
+                    </div>
+                    <Progress value={path.progress} />
+                  </div>
+                  
+                  <div className="mb-4">
+                    <div className="text-xs text-white/70 mb-1">Technologies:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {path.technologies.map((tech) => (
+                        <span key={tech} className="text-xs bg-white/10 px-2 py-1 rounded">
+                          {tech}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <Button className="w-full bg-[#10B981] hover:bg-[#10B981]/90">
+                  <Play className="mr-2 h-4 w-4" />
+                  Start Learning
+                </Button>
+              </NeonCard>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="universal">
+          <div className="mb-6">
+            <SectionHeader title="Universal Professional Skills" subtitle="Essential skills valuable across all career paths" />
+          </div>
+          <div className="grid gap-6 md:grid-cols-3">
+            {universalCourses.map((course) => (
+              <NeonCard key={course.title} className="p-4">
+                <div className="aspect-video bg-gradient-to-br from-orange-600/20 to-red-600/20 rounded-lg mb-4 flex items-center justify-center">
+                  <div className="text-center">
+                    <Brain className="h-12 w-12 text-orange-400 mx-auto mb-2" />
+                    <div className="text-xs text-white/70">Universal Skills</div>
+                  </div>
+                </div>
+                
+                <div className="mb-3">
+                  <h3 className="font-semibold mb-1">{course.title}</h3>
+                  <p className="text-xs text-white/70 mb-2">{course.provider}</p>
+                  
+                  <div className="flex items-center justify-between text-xs text-white/60 mb-2">
+                    <span>⭐ {course.rating} ({course.students} students)</span>
+                    <span>{course.duration}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-3">
+                    <Badge variant="outline" className="text-xs bg-orange-500/20 text-orange-400">
+                      {course.level}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs bg-blue-500/20 text-blue-400">
+                      {course.price}
+                    </Badge>
+                  </div>
+                  
+                  <div className="mb-3">
+                    <div className="text-xs text-white/70 mb-1">Applicable to:</div>
+                    <div className="flex flex-wrap gap-1">
+                      {course.applicableTo.map((career) => (
+                        <span key={career} className="text-xs bg-white/10 px-2 py-1 rounded">
+                          {career}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <Button className="w-full bg-orange-600 hover:bg-orange-600/90">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Course
+                </Button>
+              </NeonCard>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Skill Challenges */}
+      <div className="mb-8">
+        <SectionHeader title="Professional Development Challenges" subtitle="Build skills that matter across all careers" />
+        <div className="grid gap-4 md:grid-cols-3">
+          {skillChallenges.map((challenge) => (
+            <NeonCard key={challenge.title} className="p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <h3 className="font-semibold">{challenge.title}</h3>
+                  <p className="text-xs text-white/70 mt-1">{challenge.description}</p>
+                </div>
+                <Badge variant="outline" className="text-xs bg-orange-500/20 text-orange-400">
+                  {challenge.difficulty}
+                </Badge>
+              </div>
+              
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-white/60 mb-1">
+                  <span>{challenge.participants} participants</span>
+                  <span>{challenge.timeLeft} left</span>
+                </div>
+                <Progress value={challenge.progress} />
+              </div>
+              
+              <div className="mb-3">
+                <div className="text-xs text-white/70 mb-1">Skills developed:</div>
+                <div className="flex flex-wrap gap-1">
+                  {challenge.skills.map((skill) => (
+                    <span key={skill} className="text-xs bg-white/10 px-1 py-0.5 rounded">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="text-xs text-white/70">
+                  🏆 {challenge.reward}
+                </div>
+                <Button size="sm" className="bg-green-600 hover:bg-green-600/90">
+                  <Trophy className="mr-1 h-3 w-3" />
+                  Join
+                </Button>
+              </div>
+            </NeonCard>
+          ))}
+        </div>
+      </div>
+
+      {/* Career-Specific Certifications */}
+      <div>
+        <SectionHeader title="Professional Certifications" subtitle="Industry-recognized credentials for your recommended career paths" />
+        <Tabs defaultValue={topCareer} className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value={topCareer}>{topCareer}</TabsTrigger>
+            <TabsTrigger value={secondaryCareer}>{secondaryCareer}</TabsTrigger>
+            <TabsTrigger value="UX Designer">UX Designer</TabsTrigger>
+          </TabsList>
+          
+          {Object.entries(professionalCertifications).map(([career, certs]) => (
+            <TabsContent key={career} value={career}>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {certs.map((cert) => (
+                  <NeonCard key={cert.name} className="p-4 text-center">
+                    <div className="mb-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-600/20 to-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Target className="h-6 w-6 text-blue-400" />
+                      </div>
+                      <h3 className="font-semibold text-sm">{cert.name}</h3>
+                      <p className="text-xs text-white/70">{cert.provider}</p>
+                    </div>
+                    
+                    <div className="mb-3 text-xs text-white/60">
+                      <div className="mb-1">Difficulty: {cert.difficulty}</div>
+                      <div>Duration: {cert.timeToComplete}</div>
+                    </div>
+                    
+                    <Button size="sm" className="w-full bg-[#3B82F6] hover:bg-[#3B82F6]/90">
+                      <BookOpen className="mr-1 h-3 w-3" />
+                      Learn More
+                    </Button>
+                  </NeonCard>
+                ))}
+              </div>
+            </TabsContent>
+          ))}
+        </Tabs>
+      </div>
+    </main>
+  )
+}
