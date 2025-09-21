@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background matching navbar -->
+  <defs>
+    <linearGradient id="brainGradientLarge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0.7" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:0.6" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:0.5" />
+    </linearGradient>
+    <filter id="glowLarge" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Dark background -->
+  <rect width="512" height="512" fill="#0D0D0D"/>
+  
+  <!-- Rounded rectangle background -->
+  <rect x="32" y="32" width="448" height="448" rx="128" fill="url(#brainGradientLarge)" stroke="rgba(255,255,255,0.2)" stroke-width="4"/>
+  
+  <!-- Brain icon (scaled up) -->
+  <g transform="translate(128, 128) scale(4)" filter="url(#glowLarge)">
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v1.086a4.001 4.001 0 0 1 1.964 6.864L14.5 13a2.5 2.5 0 0 1-2.5 2.5h-.043a2.5 2.5 0 0 1-2.5-2.5L9 12.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 2.5-2.5Z" fill="white" stroke="none"/>
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v1.086" stroke="rgba(59,130,246,0.8)" stroke-width="0.5" fill="none"/>
+  </g>
+  
+  <!-- Text below icon -->
+  <text x="256" y="420" text-anchor="middle" fill="white" font-family="Inter, sans-serif" font-size="48" font-weight="600">NeuroCareer</text>
+  <text x="256" y="460" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-family="Inter, sans-serif" font-size="24">AI-Powered Career Assessment</text>
+</svg>

@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Gradient background -->
+  <defs>
+    <linearGradient id="navbarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:0.7" />
+    </linearGradient>
+    <filter id="dropShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#3B82F6" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  
+  <!-- Rounded square background exactly like navbar -->
+  <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#navbarGradient)" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+  
+  <!-- Brain icon scaled and positioned to match navbar -->
+  <g transform="translate(20, 20) scale(1.5)" filter="url(#dropShadow)">
+    <!-- Lucide Brain icon path -->
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v1.086a4.001 4.001 0 0 1 1.964 6.864L14.5 13a2.5 2.5 0 0 1-2.5 2.5h-.043a2.5 2.5 0 0 1-2.5-2.5L9 12.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 2.5-2.5Z" 
+          fill="white" 
+          stroke="none"/>
+  </g>
+</svg>

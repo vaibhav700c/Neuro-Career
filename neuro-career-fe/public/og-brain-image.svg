@@ -1,0 +1,59 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect width="1200" height="630" fill="#0D0D0D"/>
+  
+  <!-- Gradient overlay -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0.1" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:0.05" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:0.9" />
+      <stop offset="50%" style="stop-color:#8B5CF6;stop-opacity:0.8" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:0.7" />
+    </linearGradient>
+    <filter id="logoGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#3B82F6" flood-opacity="0.8"/>
+    </filter>
+  </defs>
+  
+  <!-- Background gradient -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Logo container -->
+  <g transform="translate(150, 200)">
+    <!-- Logo background -->
+    <rect x="0" y="0" width="120" height="120" rx="32" fill="url(#logoGradient)" stroke="rgba(255,255,255,0.2)" stroke-width="2" filter="url(#logoGlow)"/>
+    
+    <!-- Brain icon -->
+    <g transform="translate(30, 30) scale(3.75)">
+      <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v1.086a4.001 4.001 0 0 1 1.964 6.864L14.5 13a2.5 2.5 0 0 1-2.5 2.5h-.043a2.5 2.5 0 0 1-2.5-2.5L9 12.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 2.5-2.5Z" 
+            fill="white" 
+            stroke="none"/>
+    </g>
+  </g>
+  
+  <!-- Main title -->
+  <text x="320" y="270" fill="white" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="64" font-weight="700">NeuroCareer</text>
+  
+  <!-- Subtitle -->
+  <text x="320" y="320" fill="rgba(255,255,255,0.8)" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="36" font-weight="400">AI-Powered Career Assessment</text>
+  
+  <!-- Description -->
+  <text x="320" y="380" fill="rgba(255,255,255,0.7)" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="300">Discover your ideal career path with</text>
+  <text x="320" y="410" fill="rgba(255,255,255,0.7)" font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif" font-size="24" font-weight="300">voice interaction and AI guidance</text>
+  
+  <!-- Feature highlights -->
+  <g transform="translate(950, 180)">
+    <rect x="0" y="0" width="220" height="300" rx="16" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+    <text x="20" y="40" fill="white" font-family="Inter, sans-serif" font-size="18" font-weight="600">Features:</text>
+    <text x="20" y="80" fill="rgba(255,255,255,0.9)" font-family="Inter, sans-serif" font-size="16">🤖 AI Career Counselor</text>
+    <text x="20" y="110" fill="rgba(255,255,255,0.9)" font-family="Inter, sans-serif" font-size="16">🎤 Voice Interaction</text>
+    <text x="20" y="140" fill="rgba(255,255,255,0.9)" font-family="Inter, sans-serif" font-size="16">📊 Real-time Analysis</text>
+    <text x="20" y="170" fill="rgba(255,255,255,0.9)" font-family="Inter, sans-serif" font-size="16">🎯 Personalized Results</text>
+    <text x="20" y="200" fill="rgba(255,255,255,0.9)" font-family="Inter, sans-serif" font-size="16">💼 Career Matching</text>
+    <text x="20" y="230" fill="rgba(255,255,255,0.9)" font-family="Inter, sans-serif" font-size="16">🚀 Future-Ready Skills</text>
+  </g>
+</svg>
