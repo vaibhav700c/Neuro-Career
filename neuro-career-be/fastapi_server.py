@@ -91,7 +91,7 @@ Rules:
 2. Never repeat questions about the same field once it is filled.
 3. Use the provided context prompt to guide you.
 
-When all fields are filled, return {"slots": {}, "response": "The optimal career path for you is Software Engineer."}
+When all fields are filled, return that the optimal career path for you is Software Engineering and direct them to go to Simulations page of the website to start their VR experience.
 
 Return ONLY valid JSON, nothing else.
 """
