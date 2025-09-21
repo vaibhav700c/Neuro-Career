@@ -14,6 +14,8 @@ type Message = {
   timestamp: Date
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+
 export default function AssessmentPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [textInput, setTextInput] = useState("")
@@ -41,7 +43,7 @@ export default function AssessmentPage() {
     lastTTSStatusCheck.current = now
 
     try {
-      const response = await axios.get("http://localhost:8000/api/tts-status", {
+      const response = await axios.get(`${API_BASE_URL}/api/tts-status`, {
         timeout: 3000
       })
       
@@ -49,13 +51,15 @@ export default function AssessmentPage() {
         setShouldUseBrowserTTS(!response.data.can_use_elevenlabs)
         
         if (!response.data.can_use_elevenlabs) {
-          console.log("TTS Status: Switching to browser speech synthesis due to quota/rate limits")
+          console.log("TTS Status: Switching to browser speech synthesis due to quota/rate limits or unusual activity")
         } else {
           console.log(`TTS Status: ElevenLabs available, ${response.data.requests_remaining} requests remaining`)
         }
       }
-    } catch (error) {
-      console.warn("Could not check TTS status, continuing with current preference:", error)
+    } catch (error: any) {
+      console.warn("Could not check TTS status, defaulting to browser speech synthesis:", error)
+      // Default to browser TTS if we can't check status
+      setShouldUseBrowserTTS(true)
     }
   }
 
@@ -120,7 +124,7 @@ export default function AssessmentPage() {
       setTextInput("")
       
       // Get AI response
-      const response = await axios.post("http://localhost:8000/api/chat", {
+      const response = await axios.post(`${API_BASE_URL}/api/chat`, {
         message
       })
       
@@ -237,7 +241,7 @@ export default function AssessmentPage() {
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
       
       try {
-        const response = await axios.post("http://localhost:8000/api/text-to-speech", {
+        const response = await axios.post(`${API_BASE_URL}/api/text-to-speech`, {
           message: text
         }, {
           responseType: 'blob',
