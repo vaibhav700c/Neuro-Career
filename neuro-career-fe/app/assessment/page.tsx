@@ -15,8 +15,19 @@ type Message = {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
-const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
-const USE_MOCK_RESPONSES = process.env.NEXT_PUBLIC_USE_MOCK_RESPONSES === 'true'
+// Default to demo mode in production if env vars aren't set
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true' || (!process.env.NEXT_PUBLIC_API_BASE_URL && process.env.NODE_ENV === 'production')
+const USE_MOCK_RESPONSES = process.env.NEXT_PUBLIC_USE_MOCK_RESPONSES === 'true' || DEMO_MODE
+
+// Debug logging for production troubleshooting
+if (typeof window !== 'undefined') {
+  console.log('Environment check:', {
+    NODE_ENV: process.env.NODE_ENV,
+    DEMO_MODE,
+    USE_MOCK_RESPONSES,
+    API_BASE_URL
+  })
+}
 
 // Mock responses for demo mode
 const MOCK_RESPONSES = [
