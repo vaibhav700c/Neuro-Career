@@ -15,6 +15,19 @@ type Message = {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true'
+const USE_MOCK_RESPONSES = process.env.NEXT_PUBLIC_USE_MOCK_RESPONSES === 'true'
+
+// Mock responses for demo mode
+const MOCK_RESPONSES = [
+  "Hello! I'm Bonita, your AI career counselor. I'm here to help you discover your ideal career path through our advanced assessment. What brings you here today?",
+  "That's wonderful! Career exploration is such an important journey. Let's start by understanding your interests. What activities or subjects do you find most engaging?",
+  "Excellent! Those interests suggest you might thrive in fields that combine creativity with analytical thinking. Can you tell me about a time when you felt really accomplished or proud of something you created or solved?",
+  "That's a great example! It shows you have strong problem-solving skills and attention to detail. Now, let's think about your ideal work environment. Do you prefer working independently, in small teams, or with large groups of people?",
+  "Based on what you've shared so far, I'm seeing some interesting patterns. You seem to have a good balance of creative and analytical thinking, with strong collaborative skills. Let me ask you this: what does career success look like to you personally?",
+  "That's a very thoughtful perspective on success. It tells me you value both personal fulfillment and making a positive impact. Based on our conversation, I'd like to suggest a few career paths that might align with your interests and values. Would you like me to share some recommendations?",
+  "Wonderful! Based on your responses, here are some career paths I'd recommend exploring: 1) UX/UI Design - combines creativity with problem-solving, 2) Data Science - analytical work with real-world impact, 3) Product Management - collaborative role bridging technical and creative teams. Which of these resonates most with you?"
+]
 
 export default function AssessmentPage() {
   const [messages, setMessages] = useState<Message[]>([])
@@ -25,6 +38,7 @@ export default function AssessmentPage() {
   const [hasStarted, setHasStarted] = useState(false)
   const [currentPlayingMessageId, setCurrentPlayingMessageId] = useState<number | null>(null)
   const [shouldUseBrowserTTS, setShouldUseBrowserTTS] = useState(false)
+  const [mockResponseIndex, setMockResponseIndex] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const currentAudioRef = useRef<HTMLAudioElement | null>(null)
   const hasSpokenInitialRef = useRef(false)
@@ -33,8 +47,15 @@ export default function AssessmentPage() {
   const lastTTSRequestRef = useRef<string>('') // Track last TTS request to prevent duplicates
   const lastTTSStatusCheck = useRef<number>(0) // Track when we last checked TTS status
 
-  // Function to check TTS status and decide whether to use ElevenLabs or browser TTS
+    // Function to check TTS status and decide whether to use ElevenLabs or browser TTS
   const checkTTSStatus = async () => {
+    // In demo mode, always use browser TTS
+    if (DEMO_MODE) {
+      setShouldUseBrowserTTS(true)
+      console.log("Demo mode: Using browser speech synthesis")
+      return
+    }
+    
     const now = Date.now()
     // Only check status every 30 seconds to avoid spam
     if (now - lastTTSStatusCheck.current < 30000) {
@@ -85,11 +106,16 @@ export default function AssessmentPage() {
       const initialMessage: Message = {
         id: ++messageIdRef.current,
         role: "ai",
-        content: "Hello! I'm Bonita, your AI career counselor. I'm here to help you explore career paths that match your interests and skills.",
+        content: DEMO_MODE ? MOCK_RESPONSES[0] : "Hello! I'm Bonita, your AI career counselor. I'm here to help you explore career paths that match your interests and skills.",
         timestamp: new Date()
       }
       setMessages([initialMessage])
       setHasStarted(true)
+      
+      // Initialize mock response counter if in demo mode
+      if (DEMO_MODE && USE_MOCK_RESPONSES) {
+        setMockResponseIndex(1) // Start from 1 since we used index 0 for initial message
+      }
       
       // Automatically speak the initial greeting after a delay
       setTimeout(() => {
@@ -123,15 +149,27 @@ export default function AssessmentPage() {
       addMessage("user", message)
       setTextInput("")
       
-      // Get AI response
-      const response = await axios.post(`${API_BASE_URL}/api/chat`, {
-        message
-      })
+      // Get AI response - use mock responses in demo mode
+      let aiResponse: string
       
-      const aiResponse = response.data.response
+      if (DEMO_MODE && USE_MOCK_RESPONSES) {
+        // Simulate network delay
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000))
+        
+        // Get next mock response
+        aiResponse = MOCK_RESPONSES[mockResponseIndex % MOCK_RESPONSES.length]
+        setMockResponseIndex(prev => prev + 1)
+      } else {
+        // Use real API
+        const response = await axios.post(`${API_BASE_URL}/api/chat`, {
+          message
+        })
+        aiResponse = response.data.response
+      }
+      
       const aiMessage = addMessage("ai", aiResponse)
       
-      // Speak the AI response
+      // Speak the AI response (will use browser TTS in demo mode)
       setTimeout(() => {
         playTextToSpeech(aiResponse, aiMessage.id)
       }, 300)
@@ -392,6 +430,19 @@ export default function AssessmentPage() {
 
   return (
     <main className="dark mx-auto max-w-4xl px-4 py-6 h-screen flex flex-col">
+      {/* Demo Mode Banner */}
+      {DEMO_MODE && (
+        <div className="mb-4 p-3 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-300">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+            <span className="font-medium">Demo Mode</span>
+          </div>
+          <p className="text-sm text-blue-200 mt-1">
+            You're experiencing a frontend-only demo with pre-written responses and browser-based text-to-speech.
+          </p>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="mb-4">
         <h1 className="text-2xl font-semibold">AI Career Assessment</h1>
