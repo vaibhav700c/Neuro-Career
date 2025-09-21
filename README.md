@@ -64,7 +64,7 @@ The frontend will be available at `http://localhost:3000`
 cd neuro-career-be
 
 # Create virtual environment
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies

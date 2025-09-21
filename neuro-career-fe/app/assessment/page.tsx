@@ -22,12 +22,42 @@ export default function AssessmentPage() {
   const [isPlayingAudio, setIsPlayingAudio] = useState(false)
   const [hasStarted, setHasStarted] = useState(false)
   const [currentPlayingMessageId, setCurrentPlayingMessageId] = useState<number | null>(null)
+  const [shouldUseBrowserTTS, setShouldUseBrowserTTS] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const currentAudioRef = useRef<HTMLAudioElement | null>(null)
   const hasSpokenInitialRef = useRef(false)
   const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const messageIdRef = useRef(0) // Track message IDs
   const lastTTSRequestRef = useRef<string>('') // Track last TTS request to prevent duplicates
+  const lastTTSStatusCheck = useRef<number>(0) // Track when we last checked TTS status
+
+  // Function to check TTS status and decide whether to use ElevenLabs or browser TTS
+  const checkTTSStatus = async () => {
+    const now = Date.now()
+    // Only check status every 30 seconds to avoid spam
+    if (now - lastTTSStatusCheck.current < 30000) {
+      return
+    }
+    lastTTSStatusCheck.current = now
+
+    try {
+      const response = await axios.get("http://localhost:8000/api/tts-status", {
+        timeout: 3000
+      })
+      
+      if (response.data && typeof response.data.can_use_elevenlabs === 'boolean') {
+        setShouldUseBrowserTTS(!response.data.can_use_elevenlabs)
+        
+        if (!response.data.can_use_elevenlabs) {
+          console.log("TTS Status: Switching to browser speech synthesis due to quota/rate limits")
+        } else {
+          console.log(`TTS Status: ElevenLabs available, ${response.data.requests_remaining} requests remaining`)
+        }
+      }
+    } catch (error) {
+      console.warn("Could not check TTS status, continuing with current preference:", error)
+    }
+  }
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -129,6 +159,62 @@ export default function AssessmentPage() {
     if (messageId === 1 && hasSpokenInitialRef.current) {
       return
     }
+
+    // Check TTS status proactively
+    await checkTTSStatus()
+
+    // Browser fallback function with improved error handling
+    const useBrowserSpeech = () => {
+      try {
+        if ('speechSynthesis' in window) {
+          // Cancel any existing speech
+          speechSynthesis.cancel()
+          
+          const utterance = new SpeechSynthesisUtterance(text)
+          utterance.rate = 0.9
+          utterance.pitch = 1
+          utterance.volume = 0.8
+          
+          // Try to get a better voice if available
+          const voices = speechSynthesis.getVoices()
+          const preferredVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && (voice.name.includes('Female') || voice.name.includes('Samantha') || voice.name.includes('Google'))
+          )
+          if (preferredVoice) {
+            utterance.voice = preferredVoice
+          }
+          
+          utterance.onstart = () => {
+            console.log("Browser speech synthesis started")
+          }
+          
+          utterance.onend = () => {
+            console.log("Browser speech synthesis ended")
+            setIsPlayingAudio(false)
+            setCurrentPlayingMessageId(null)
+            lastTTSRequestRef.current = '' // Reset duplicate tracking
+          }
+          
+          utterance.onerror = (event) => {
+            console.error("Browser speech synthesis error:", event)
+            setIsPlayingAudio(false)
+            setCurrentPlayingMessageId(null)
+            lastTTSRequestRef.current = '' // Reset duplicate tracking
+          }
+          
+          speechSynthesis.speak(utterance)
+          console.log("Using browser speech synthesis")
+          return true
+        }
+      } catch (fallbackError) {
+        console.error("Browser speech synthesis fallback failed:", fallbackError)
+        setIsPlayingAudio(false)
+        setCurrentPlayingMessageId(null)
+        lastTTSRequestRef.current = '' // Reset duplicate tracking
+        return false
+      }
+      return false
+    }
     
     try {
       setIsPlayingAudio(true)
@@ -136,86 +222,117 @@ export default function AssessmentPage() {
         setCurrentPlayingMessageId(messageId)
       }
       
-      // Use ElevenLabs API only
-      const response = await axios.post("http://localhost:8000/api/text-to-speech", {
-        message: text
-      }, {
-        responseType: 'blob'
-      })
-      
-      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
-      const audioUrl = URL.createObjectURL(audioBlob)
-      
-      const audio = new Audio(audioUrl)
-      currentAudioRef.current = audio
-      
-      audio.onended = () => {
-        console.log("Audio playback ended")
-        setIsPlayingAudio(false)
-        setCurrentPlayingMessageId(null)
-        lastTTSRequestRef.current = '' // Reset duplicate tracking
-        URL.revokeObjectURL(audioUrl)
-        if (currentAudioRef.current === audio) {
-          currentAudioRef.current = null
+      // If we should use browser TTS (due to quota limits), skip ElevenLabs API
+      if (shouldUseBrowserTTS) {
+        console.log("Using browser speech synthesis due to quota status")
+        if (useBrowserSpeech()) {
+          return
+        } else {
+          throw new Error("Browser speech synthesis failed")
         }
       }
       
-      audio.onerror = (e) => {
-        console.error("Audio playback error:", e)
-        setIsPlayingAudio(false)
-        setCurrentPlayingMessageId(null)
-        lastTTSRequestRef.current = '' // Reset duplicate tracking
-        URL.revokeObjectURL(audioUrl)
-        if (currentAudioRef.current === audio) {
-          currentAudioRef.current = null
-        }
-      }
-
-      // Play audio
+      // Try ElevenLabs API with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
       try {
-        await audio.play()
-        console.log("Audio playback started successfully")
-      } catch (playError) {
-        console.error("Audio play() failed:", playError)
-        throw playError
+        const response = await axios.post("http://localhost:8000/api/text-to-speech", {
+          message: text
+        }, {
+          responseType: 'blob',
+          timeout: 8000, // 8 second axios timeout
+          signal: controller.signal
+        })
+        
+        clearTimeout(timeoutId)
+        
+        // Check if response is successful
+        if (response.status === 200 && response.data) {
+          const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
+          const audioUrl = URL.createObjectURL(audioBlob)
+          
+          const audio = new Audio(audioUrl)
+          currentAudioRef.current = audio
+          
+          audio.onended = () => {
+            console.log("ElevenLabs audio playback ended")
+            setIsPlayingAudio(false)
+            setCurrentPlayingMessageId(null)
+            lastTTSRequestRef.current = '' // Reset duplicate tracking
+            URL.revokeObjectURL(audioUrl)
+            if (currentAudioRef.current === audio) {
+              currentAudioRef.current = null
+            }
+          }
+          
+          audio.onerror = (e) => {
+            console.error("ElevenLabs audio playback error:", e)
+            setIsPlayingAudio(false)
+            setCurrentPlayingMessageId(null)
+            lastTTSRequestRef.current = '' // Reset duplicate tracking
+            URL.revokeObjectURL(audioUrl)
+            if (currentAudioRef.current === audio) {
+              currentAudioRef.current = null
+            }
+            // Try browser fallback on audio error
+            useBrowserSpeech()
+          }
+
+          // Play audio
+          try {
+            await audio.play()
+            console.log("ElevenLabs audio playback started successfully")
+          } catch (playError) {
+            console.error("ElevenLabs audio play() failed:", playError)
+            // Fallback to browser speech if audio play fails
+            if (!useBrowserSpeech()) {
+              throw playError
+            }
+          }
+        } else {
+          throw new Error("Invalid response from TTS API")
+        }
+        
+      } catch (apiError: any) {
+        clearTimeout(timeoutId)
+        
+        // Check for quota/rate limit errors
+        if (apiError.response?.status === 429 || 
+            (apiError.response?.status >= 400 && apiError.response?.status < 500)) {
+          console.log("ElevenLabs API quota/rate limit exceeded, switching to browser speech synthesis")
+          
+          // Update preference to use browser TTS going forward
+          setShouldUseBrowserTTS(true)
+          
+          if (!useBrowserSpeech()) {
+            throw new Error("Both ElevenLabs API and browser speech synthesis failed")
+          }
+        } else if (apiError.code === 'ECONNABORTED' || apiError.name === 'AbortError') {
+          console.log("ElevenLabs API timeout, using browser speech synthesis fallback")
+          
+          if (!useBrowserSpeech()) {
+            throw new Error("ElevenLabs API timeout and browser speech synthesis failed")
+          }
+        } else {
+          console.error("ElevenLabs API error:", apiError)
+          
+          // Try browser fallback for any other API error
+          if (!useBrowserSpeech()) {
+            throw apiError
+          }
+        }
       }
       
     } catch (error: any) {
-      console.error("TTS failed:", error)
+      console.error("TTS failed completely:", error)
       setIsPlayingAudio(false)
       setCurrentPlayingMessageId(null)
+      lastTTSRequestRef.current = '' // Reset duplicate tracking
       
-      // Check if it's an API quota error
-      if (error.response?.status === 401 || error.response?.status === 429) {
-        console.log("ElevenLabs API quota exceeded, trying browser speech synthesis fallback")
-        
-        // Fallback to browser's built-in speech synthesis
-        try {
-          if ('speechSynthesis' in window) {
-            const utterance = new SpeechSynthesisUtterance(text)
-            utterance.rate = 0.9
-            utterance.pitch = 1
-            utterance.volume = 1
-            
-            utterance.onend = () => {
-              setIsPlayingAudio(false)
-              setCurrentPlayingMessageId(null)
-            }
-            
-            utterance.onerror = () => {
-              setIsPlayingAudio(false)
-              setCurrentPlayingMessageId(null)
-              console.error("Browser speech synthesis failed")
-            }
-            
-            speechSynthesis.speak(utterance)
-            console.log("Using browser speech synthesis as fallback")
-          }
-        } catch (fallbackError) {
-          console.error("Browser speech synthesis fallback failed:", fallbackError)
-        }
-      } else {
-        console.error("Network or other TTS error:", error)
+      // Last resort: try browser speech one more time
+      if (!useBrowserSpeech()) {
+        console.error("All TTS methods failed")
       }
     }
   }

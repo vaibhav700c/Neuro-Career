@@ -11,9 +11,11 @@ import assemblyai as aai
 from elevenlabs import ElevenLabs
 import json
 import traceback
+import time
+from datetime import datetime, timedelta
 
 # ------------------ Load environment variables ------------------
-ENV_PATH = r"C:\full_prototype\Neuro-Career\neuro-career-be\.env"   # change if needed
+ENV_PATH = ".env"   # .env file in the same directory
 load_dotenv(dotenv_path=ENV_PATH)
 
 ASSEMBLYAI_KEY = os.getenv("ASSEMBLYAI_API_KEY")
@@ -29,6 +31,48 @@ if not (ASSEMBLYAI_KEY and GEMINI_KEY and ELEVEN_KEY):
 aai.settings.api_key = ASSEMBLYAI_KEY
 genai.configure(api_key=GEMINI_KEY)
 eleven_client = ElevenLabs(api_key=ELEVEN_KEY)
+
+# ------------------ Rate limiting and quota tracking ------------------
+class TTSQuotaTracker:
+    def __init__(self):
+        self.request_times = []
+        self.quota_exhausted = False
+        self.quota_reset_time = None
+        self.max_requests_per_minute = 20  # Conservative limit for free tier
+        
+    def can_make_request(self):
+        """Check if we can make a request without hitting rate limits"""
+        now = datetime.now()
+        
+        # If quota is exhausted and we haven't reached reset time, return False
+        if self.quota_exhausted and self.quota_reset_time and now < self.quota_reset_time:
+            return False
+            
+        # Clean old requests (older than 1 minute)
+        self.request_times = [req_time for req_time in self.request_times 
+                             if now - req_time < timedelta(minutes=1)]
+        
+        # Check if we're under the rate limit
+        return len(self.request_times) < self.max_requests_per_minute
+    
+    def record_request(self):
+        """Record a successful request"""
+        self.request_times.append(datetime.now())
+        
+    def record_quota_exhausted(self):
+        """Record that quota is exhausted, set reset time to 1 hour from now"""
+        self.quota_exhausted = True
+        self.quota_reset_time = datetime.now() + timedelta(hours=1)
+        print(f"ElevenLabs quota exhausted, will retry after {self.quota_reset_time}")
+        
+    def reset_quota_status(self):
+        """Reset quota status if enough time has passed"""
+        if self.quota_exhausted and self.quota_reset_time and datetime.now() >= self.quota_reset_time:
+            self.quota_exhausted = False
+            self.quota_reset_time = None
+            print("ElevenLabs quota status reset, attempting API calls again")
+
+tts_quota_tracker = TTSQuotaTracker()
 
 # ------------------ FastAPI app ------------------
 app = FastAPI(title="AI Career Assessment API", version="1.0.0")
@@ -48,6 +92,11 @@ class ChatRequest(BaseModel):
 
 class TTSRequest(BaseModel):
     message: str
+
+class TTSStatusResponse(BaseModel):
+    can_use_elevenlabs: bool
+    requests_remaining: int
+    quota_reset_time: str = None
 
 # ------------------ State (use consistent slot keys) ------------------
 state = {
@@ -179,10 +228,11 @@ Return ONLY valid JSON, nothing else.
                 cleaned = text_out.strip()
                 if cleaned.startswith("```"):
                     cleaned = cleaned.strip("`")
-    # Remove optional "json" after ```
-                if cleaned.lower().startswith("json"):
-                    cleaned = cleaned[4:].strip()
-                parsed = json.loads(text_out)
+                    # Remove optional "json" after ```
+                    if cleaned.lower().startswith("json"):
+                        cleaned = cleaned[4:].strip()
+                
+                parsed = json.loads(cleaned)
                 # Ensure dict has required keys
                 if not isinstance(parsed, dict):
                     raise ValueError("Parsed not a dict")
@@ -193,7 +243,6 @@ Return ONLY valid JSON, nothing else.
                 if slots is None:
                     slots = {}
                 
-                parsed = json.loads(cleaned)
                 return {"slots": slots, "response": resp}
             except Exception:
                 # If model returned non-JSON text, safely fall back to returning that text as response and no slots
@@ -360,26 +409,121 @@ async def text_to_speech(request: TTSRequest):
         if not request.message.strip():
             raise HTTPException(status_code=400, detail="Message cannot be empty")
 
-        # Get audio stream from ElevenLabs
-        audio_stream = eleven_client.text_to_speech.convert(
-            voice_id="pNInz6obpgDQGcFmaJgB",
-            text=request.message,
-            model_id="eleven_turbo_v2"
-        )
+        # Extract text to convert from the message
+        text_to_convert = request.message.strip()
+        
+        # Try to parse as JSON first (in case it's a structured response)
+        try:
+            parsed_json = json.loads(text_to_convert)
+            if isinstance(parsed_json, dict) and "response" in parsed_json:
+                text_to_convert = parsed_json["response"]
+        except (json.JSONDecodeError, TypeError):
+            # If it's not JSON, use the original text as is
+            pass
+        
+        # Ensure we have text to convert
+        if not text_to_convert or not text_to_convert.strip():
+            raise HTTPException(status_code=400, detail="No text found to convert to speech")
 
-        # Collect chunks into final bytes
-        audio_bytes = b"".join(chunk for chunk in audio_stream if isinstance(chunk, (bytes, bytearray)))
+        print(f"Converting to speech: {text_to_convert[:100]}...")  # Log for debugging
 
-        return Response(
-            content=audio_bytes,
-            media_type="audio/mpeg",
-            headers={"Content-Disposition": "attachment; filename=speech.mp3"},
-        )
+        # Check quota status first
+        tts_quota_tracker.reset_quota_status()
+        
+        # If quota is exhausted or rate limit exceeded, return 429 immediately
+        if not tts_quota_tracker.can_make_request():
+            print("Rate limit or quota exceeded, returning 429 immediately")
+            raise HTTPException(
+                status_code=429, 
+                detail="ElevenLabs API quota exceeded or rate limit reached. Please use browser speech synthesis fallback."
+            )
 
+        try:
+            # Get audio stream from ElevenLabs
+            audio_stream = eleven_client.text_to_speech.convert(
+                voice_id="pNInz6obpgDQGcFmaJgB",
+                text=text_to_convert,
+                model_id="eleven_turbo_v2"
+            )
+
+            # Collect chunks into final bytes
+            audio_bytes = b"".join(chunk for chunk in audio_stream if isinstance(chunk, (bytes, bytearray)))
+
+            # Record successful request
+            tts_quota_tracker.record_request()
+
+            return Response(
+                content=audio_bytes,
+                media_type="audio/mpeg",
+                headers={
+                    "Content-Disposition": "attachment; filename=speech.mp3",
+                    "X-TTS-Source": "elevenlabs"  # Header to indicate source
+                },
+            )
+        
+        except Exception as elevenlabs_error:
+            # Check if it's an API quota/auth error
+            error_str = str(elevenlabs_error).lower()
+            
+            # More comprehensive error detection including unusual activity
+            quota_keywords = ['401', '429', 'quota', 'unusual activity', 'unusual_activity', 
+                            'detected_unusual_activity', 'free tier', 'rate limit', 
+                            'too many requests', 'usage limit', 'exceeded', 'abuse', 'disabled']
+            
+            if any(keyword in error_str for keyword in quota_keywords):
+                print(f"ElevenLabs API blocked (quota/auth/abuse issue): {elevenlabs_error}")
+                
+                # Record quota exhaustion for longer period if it's an abuse detection
+                if 'unusual' in error_str or 'abuse' in error_str or 'disabled' in error_str:
+                    print("Detected ElevenLabs abuse/unusual activity - disabling for extended period")
+                    tts_quota_tracker.quota_exhausted = True
+                    tts_quota_tracker.quota_reset_time = datetime.now() + timedelta(hours=24)  # 24 hour cooldown
+                else:
+                    tts_quota_tracker.record_quota_exhausted()
+                
+                # Return a 429 status to trigger frontend fallback to browser speech synthesis
+                raise HTTPException(
+                    status_code=429, 
+                    detail="ElevenLabs API quota exceeded or unusual activity detected. Using browser speech synthesis fallback."
+                )
+            else:
+                # Re-raise for other types of errors
+                print(f"ElevenLabs API error (non-quota): {elevenlabs_error}")
+                raise elevenlabs_error
+
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Text-to-speech failed: {str(e)}")
 
+
+@app.get("/api/tts-status")
+async def get_tts_status():
+    """Get current TTS quota status to help frontend decide whether to use ElevenLabs or browser speech"""
+    try:
+        tts_quota_tracker.reset_quota_status()
+        can_use = tts_quota_tracker.can_make_request()
+        
+        remaining_requests = max(0, tts_quota_tracker.max_requests_per_minute - len(tts_quota_tracker.request_times))
+        
+        reset_time = None
+        if tts_quota_tracker.quota_reset_time:
+            reset_time = tts_quota_tracker.quota_reset_time.isoformat()
+            
+        return TTSStatusResponse(
+            can_use_elevenlabs=can_use and not tts_quota_tracker.quota_exhausted,
+            requests_remaining=remaining_requests,
+            quota_reset_time=reset_time
+        )
+    except Exception as e:
+        # If there's an error checking status, assume we can't use ElevenLabs
+        return TTSStatusResponse(
+            can_use_elevenlabs=False,
+            requests_remaining=0,
+            quota_reset_time=None
+        )
 
 
 # ------------------ Run server ------------------
@@ -390,5 +534,6 @@ if __name__ == "__main__":
     print("  POST /api/transcribe - Audio transcription")
     print("  POST /api/chat - AI chat responses")
     print("  POST /api/text-to-speech - Text-to-speech conversion")
+    print("  GET /api/tts-status - TTS quota and availability status")
     print("\nServer running at: http://localhost:8000")
     uvicorn.run(app, host="0.0.0.0", port=8000)
