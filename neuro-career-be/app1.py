@@ -1,5 +1,3 @@
-
-# continuous_assistant.py
 import os
 import queue
 import threading
@@ -15,7 +13,7 @@ import google.generativeai as genai
 from elevenlabs import ElevenLabs
 
 # ---------------- CONFIG ----------------
-ENV_PATH = "/Users/webov/Desktop/Projects/GenAI/neuro-career-be/.env"   # change if needed
+ENV_PATH = r"C:\full_prototype\Neuro-Career\neuro-career-be\.env"   # change if needed
 SAMPLE_RATE = 16000
 BLOCKSIZE = 1024                        # input block size for sounddevice callback
 SILENCE_THRESHOLD = 0.01                # RMS threshold to consider "speech"
@@ -24,17 +22,33 @@ MIN_UTTERANCE_DURATION = 0.15           # ignore very short noises (< seconds)
 ELEVEN_VOICE_ID = "pNInz6obpgDQGcFmaJgB"
 ELEVEN_TTS_MODEL = "eleven_turbo_v2"
 CUSTOM_PROMPT = """
-You are a prototype career counsellor helping students narrow down the best career paths for them based on their aptitudes.
-Do not start asking them questions until they say yes.
-Ask the user the following questions all together in a conversational manner and collect their answers:
-Age, School class, location, Interests, SkillsConstraints (parental preferences, time constraints), Values (helping others, creativity, money, work-life balance), Prior exploration (activity, description, duration, feedback)
+You are a prototype career counsellor chatbot named Lonita. 
+Your role is to help students explore career paths based on their basic background and preferences. 
 
-You are a prototype: always suggest "software engineer" as the optimal career path.
-
-Student says: "{user_input}"
-
-Bot Reply:
+ASk the following questions all at once: 
+   - Age  
+   - School class  
+   - Location  
+   - Interests  
+   - Skills  
+   - Constraints (e.g., parental preferences, time constraints)  
+   - Values (e.g., helping others, creativity, money, work-life balance)  
+   - Prior exploration (activity, description, duration, feedback)  
+Once the user has answered all questions, reply with Software engineer as the optimal career path
+7. Remember: you are a prototype, so the final career path is always Software Engineer, regardless of inputs
 """
+
+prompt = "Here is what we've learned so far:\n"
+
+state = {
+    "age": None,
+    "Class": None,
+    "Location": None,
+    "Interests": None,
+    "SkillsConstraints": None,
+    "Values": None,
+    "PriorExploration": None
+}
 
 # ---------------- SETUP KEYS ----------------
 load_dotenv(dotenv_path=ENV_PATH)
@@ -185,6 +199,16 @@ class AI_Assistant:
             if audio_np.shape[0] / self.sample_rate >= MIN_UTTERANCE_DURATION:
                 threading.Thread(target=self._handle_utterance, args=(audio_np,), daemon=True).start()
 
+
+    def process_new_answer(slot, value):
+        state[slot] = value
+        
+        for k, v in state.items():
+            if v:
+                prompt += f"- {k.capitalize()}: {v}\n"
+        prompt += "Which of the required pieces of information is missing? Ask only one at a time, and do NOT repeat questions for fields already filled."
+        return prompt
+
     def _handle_utterance(self, audio_np):
         """
         Save audio to temp wav, call AssemblyAI for transcription,
@@ -287,7 +311,7 @@ if __name__ == "__main__":
     try:
         greeting = (
             "Hey there! Wonderful to have another enthusiast ready to explore the VR world of careers. "
-            "My name is Bonita and I help analyze aptitudes to suggest career paths. Say 'yes' when you are ready."
+            "My name is Lonita and I help analyze aptitudes to suggest career paths. Say 'yes' when you are ready."
         )
         # speak greeting synchronously
         # reuse same handler for TTS playback
