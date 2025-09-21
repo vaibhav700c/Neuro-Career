@@ -80,7 +80,13 @@ app = FastAPI(title="AI Career Assessment API", version="1.0.0")
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://localhost:3001",
+        "https://*.vercel.app",
+        "https://neuro-career-844x.vercel.app",  # Your actual Vercel domain
+        "https://neuro-career-844x-git-main-vaibhav700cs-projects.vercel.app",  # Git branch preview URLs
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -528,6 +534,8 @@ async def get_tts_status():
 
 # ------------------ Run server ------------------
 if __name__ == "__main__":
+    import os
+    
     print("Starting AI Career Assessment FastAPI server...")
     print("Available endpoints:")
     print("  GET  / - Health check")
@@ -535,5 +543,9 @@ if __name__ == "__main__":
     print("  POST /api/chat - AI chat responses")
     print("  POST /api/text-to-speech - Text-to-speech conversion")
     print("  GET /api/tts-status - TTS quota and availability status")
-    print("\nServer running at: http://localhost:8000")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    
+    # Get port from environment (for Railway, Heroku, etc.) or default to 8000
+    port = int(os.getenv("PORT", 8000))
+    print(f"\nServer running at: http://0.0.0.0:{port}")
+    
+    uvicorn.run(app, host="0.0.0.0", port=port)
