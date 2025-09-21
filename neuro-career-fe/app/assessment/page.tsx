@@ -51,7 +51,7 @@ export default function AssessmentPage() {
       const initialMessage: Message = {
         id: ++messageIdRef.current,
         role: "ai",
-        content: "Hello! I'm Bonita, your AI career counselor. I'm here to help you explore career paths that match your interests and skills. To get started, could you tell me a bit about yourself - maybe your age, what you're currently studying, or what kind of work interests you?",
+        content: "Hello! I'm Bonita, your AI career counselor. I'm here to help you explore career paths that match your interests and skills.",
         timestamp: new Date()
       }
       setMessages([initialMessage])
