@@ -585,6 +585,7 @@ export default function AssessmentPage() {
               onTranscription={handleVoiceTranscription}
               onAIResponse={handleAIResponse}
               onError={(error: string) => setError(error)}
+              apiBaseUrl={API_BASE_URL}
               disabled={isLoading}
             />
           </div>
